@@ -7,18 +7,14 @@ import { copyMetadata } from './copy-metadata';
 describe('copyMetadata', () => {
   let tmpDir: string;
   let distDir: string;
-  let originalCwd: string;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), 'copy-metadata-'));
     distDir = join(tmpDir, 'dist');
     mkdirSync(distDir);
-    originalCwd = process.cwd();
-    process.chdir(tmpDir);
   });
 
   afterEach(() => {
-    process.chdir(originalCwd);
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
@@ -28,7 +24,7 @@ describe('copyMetadata', () => {
       writeFileSync(join(tmpDir, 'LICENSE'), 'MIT License');
       writeFileSync(join(tmpDir, 'CHANGELOG.md'), '## 1.0.0');
 
-      copyMetadata(distDir);
+      copyMetadata(tmpDir, distDir);
 
       expect(readFileSync(join(distDir, 'README.md'), 'utf-8')).toBe('# My Package');
       expect(readFileSync(join(distDir, 'LICENSE'), 'utf-8')).toBe('MIT License');
@@ -41,7 +37,7 @@ describe('copyMetadata', () => {
       writeFileSync(join(tmpDir, 'README.md'), '# My Package');
       writeFileSync(join(tmpDir, 'LICENSE'), 'MIT License');
 
-      copyMetadata(distDir);
+      copyMetadata(tmpDir, distDir);
 
       expect(existsSync(join(distDir, 'README.md'))).toBe(true);
       expect(existsSync(join(distDir, 'LICENSE'))).toBe(true);
@@ -51,7 +47,7 @@ describe('copyMetadata', () => {
 
   describe('no files present', () => {
     it('does nothing when no metadata files exist', () => {
-      copyMetadata(distDir);
+      copyMetadata(tmpDir, distDir);
 
       expect(existsSync(join(distDir, 'README.md'))).toBe(false);
       expect(existsSync(join(distDir, 'LICENSE'))).toBe(false);

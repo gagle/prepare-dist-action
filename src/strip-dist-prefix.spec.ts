@@ -51,6 +51,11 @@ describe('stripDistPrefix', () => {
       const input = '"./distribution/index.js"';
       expect(stripDistPrefix(input, 'dist')).toBe(input);
     });
+
+    it('does not strip mid-string occurrences', () => {
+      const input = '"my-dist/path"';
+      expect(stripDistPrefix(input, 'dist')).toBe(input);
+    });
   });
 
   describe('nested paths', () => {

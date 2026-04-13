@@ -2,10 +2,23 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stripDistPrefix } from './strip-dist-prefix';
 
-export function transformPackage({ packageDir, distDir, distName }: { packageDir: string; distDir: string; distName: string }): void {
+export interface TransformPackageOptions {
+  readonly packageDir: string;
+  readonly distDir: string;
+  readonly distName: string;
+}
+
+interface PackageJson {
+  scripts?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  files?: Array<string>;
+  [key: string]: unknown;
+}
+
+export function transformPackage({ packageDir, distDir, distName }: TransformPackageOptions): void {
   const raw = readFileSync(resolve(packageDir, 'package.json'), 'utf-8');
   const stripped = stripDistPrefix(raw, distName);
-  const pkg = JSON.parse(stripped);
+  const pkg: PackageJson = JSON.parse(stripped);
 
   delete pkg.scripts;
   delete pkg.devDependencies;

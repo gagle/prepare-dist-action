@@ -4,10 +4,17 @@ import type { PrepareDistContext, PrepareDistPlugin } from '../types';
 import { stripDistPrefix } from '../strip-dist-prefix';
 
 const NX_CONFIG_FILES = ['executors.json', 'generators.json'];
+const NX_ENTRY_KEYS = ['executors', 'generators'] as const;
 const SRC_PREFIX_PATTERN = /^\.\/src\//;
 
 interface SchemaEntry {
   schema?: string;
+  [key: string]: unknown;
+}
+
+interface NxConfig {
+  executors?: Record<string, SchemaEntry>;
+  generators?: Record<string, SchemaEntry>;
   [key: string]: unknown;
 }
 
@@ -37,11 +44,16 @@ function transformNxConfigs({ packageDir, distDir, distName }: PrepareDistContex
     }
 
     const raw = readFileSync(configPath, 'utf-8');
-    const config = JSON.parse(stripDistPrefix(raw, distName));
-    const entries: Record<string, SchemaEntry> = config.executors || config.generators || {};
+    const config: NxConfig = JSON.parse(stripDistPrefix(raw, distName));
 
-    for (const entry of Object.values(entries)) {
-      transformSchemaEntry(entry, packageDir, distDir);
+    for (const key of NX_ENTRY_KEYS) {
+      const entries = config[key];
+      if (!entries) {
+        continue;
+      }
+      for (const entry of Object.values(entries)) {
+        transformSchemaEntry(entry, packageDir, distDir);
+      }
     }
 
     writeFileSync(resolve(distDir, configName), JSON.stringify(config, null, 2) + '\n');

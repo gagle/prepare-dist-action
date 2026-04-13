@@ -1,10 +1,10 @@
 export interface PrepareDistContext {
-  packageDir: string;
-  distDir: string;
-  distName: string;
+  readonly packageDir: string;
+  readonly distDir: string;
+  readonly distName: string;
 }
 
 export interface PrepareDistPlugin {
-  name: string;
+  readonly name: string;
   execute(context: PrepareDistContext): void;
 }

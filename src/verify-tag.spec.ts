@@ -43,6 +43,18 @@ describe('verifyTag', () => {
 
       expect(() => verifyTag({ distDir: tmpDir, tag: 'v1.0.0-beta.1' })).not.toThrow();
     });
+
+    it('passes for a prerelease tag containing v in suffix', () => {
+      writeDistPackage('1.0.0-preview.1');
+
+      expect(() => verifyTag({ distDir: tmpDir, tag: 'v1.0.0-preview.1' })).not.toThrow();
+    });
+
+    it('passes for a component-prefixed prerelease tag with v', () => {
+      writeDistPackage('2.0.0-dev.3');
+
+      expect(() => verifyTag({ distDir: tmpDir, tag: 'my-service-v2.0.0-dev.3' })).not.toThrow();
+    });
   });
 
   describe('mismatching versions', () => {

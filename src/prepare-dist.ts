@@ -4,7 +4,13 @@ import type { PrepareDistPlugin } from './types';
 import { transformPackage } from './transform-package';
 import { copyMetadata } from './copy-metadata';
 
-export function prepareDist({ path = '.', dist = 'dist', plugins = [] }: { path?: string; dist?: string; plugins?: Array<PrepareDistPlugin> } = {}): void {
+export interface PrepareDistOptions {
+  readonly path?: string;
+  readonly dist?: string;
+  readonly plugins?: ReadonlyArray<PrepareDistPlugin>;
+}
+
+export function prepareDist({ path = '.', dist = 'dist', plugins = [] }: PrepareDistOptions = {}): void {
   const packageDir = resolve(path);
   const distDir = resolve(packageDir, dist);
 
@@ -17,7 +23,7 @@ export function prepareDist({ path = '.', dist = 'dist', plugins = [] }: { path?
   }
 
   transformPackage({ packageDir, distDir, distName: dist });
-  copyMetadata(distDir);
+  copyMetadata(process.cwd(), distDir);
 
   for (const plugin of plugins) {
     plugin.execute({ packageDir, distDir, distName: dist });

@@ -130,7 +130,7 @@ describe('nxConfigPlugin', () => {
   });
 
   describe('both configs', () => {
-    it('transforms executors and generators when both exist', () => {
+    it('transforms executors and generators when both exist as separate files', () => {
       writeConfig('executors.json', {
         executors: { run: { implementation: './dist/nx/run' } },
       });
@@ -142,6 +142,37 @@ describe('nxConfigPlugin', () => {
 
       expect(existsSync(join(distDir, 'executors.json'))).toBe(true);
       expect(existsSync(join(distDir, 'generators.json'))).toBe(true);
+    });
+
+    it('transforms both executors and generators keys in a single config file', () => {
+      writeSchemaFile('src/nx/exec-schema.json');
+      writeSchemaFile('src/generators/init/schema.json');
+      writeConfig('executors.json', {
+        executors: {
+          run: {
+            implementation: './dist/nx/executor',
+            schema: './src/nx/exec-schema.json',
+          },
+        },
+        generators: {
+          init: {
+            implementation: './dist/generators/init/generator',
+            schema: './src/generators/init/schema.json',
+          },
+        },
+      });
+
+      plugin.execute({ packageDir, distDir, distName: 'dist' });
+
+      const result = readDistConfig('executors.json');
+      const executors = result.executors as Record<string, Record<string, string>>;
+      const generators = result.generators as Record<string, Record<string, string>>;
+      expect(executors.run.implementation).toBe('./nx/executor');
+      expect(executors.run.schema).toBe('./nx/exec-schema.json');
+      expect(generators.init.implementation).toBe('./generators/init/generator');
+      expect(generators.init.schema).toBe('./generators/init/schema.json');
+      expect(existsSync(join(distDir, 'nx/exec-schema.json'))).toBe(true);
+      expect(existsSync(join(distDir, 'generators/init/schema.json'))).toBe(true);
     });
   });
 
