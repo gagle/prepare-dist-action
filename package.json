@@ -1,6 +1,6 @@
 {
   "name": "prepare-dist",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "GitHub Action that prepares a dist directory for npm publishing",
   "type": "module",
   "main": "./dist/index.mjs",
@@ -11,7 +11,9 @@
       "default": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
