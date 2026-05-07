@@ -1,6 +1,6 @@
 <p align="center">
   <h1 align="center">prepare-dist</h1>
-  <p align="center">GitHub Action that prepares a <code>dist</code> directory for <code>npm publish</code></p>
+  <p align="center">GitHub Action + CLI that prepares a <code>dist</code> directory for <code>npm publish</code></p>
 </p>
 
 ---
@@ -22,6 +22,17 @@ A single reusable action that handles all of it. Zero runtime dependencies -- on
 ```yaml
 - uses: gagle/prepare-dist@v1
 ```
+
+Also available as a CLI for use outside GitHub Actions:
+
+```bash
+npx prepare-dist                      # equivalent to running the action
+npx prepare-dist --json               # emit a machine-readable report
+npx prepare-dist --tag v1.2.3         # verify tag matches package.json version
+npx prepare-dist --capabilities --json  # discover what this CLI can do
+```
+
+Downstream automation should pin against the public CLI contract documented in [`docs/cli-api.md`](./docs/cli-api.md) — flags, exit codes, and JSON schemas.
 
 ## Usage
 
