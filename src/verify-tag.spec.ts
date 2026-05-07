@@ -20,58 +20,63 @@ describe('verifyTag', () => {
   }
 
   describe('matching versions', () => {
-    it('passes for a simple v-prefixed tag', () => {
+    it('returns matches:true for a simple v-prefixed tag', () => {
       writeDistPackage('1.0.0');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'v1.0.0' })).not.toThrow();
+      const result = verifyTag({ distDir: tmpDir, tag: 'v1.0.0' });
+      expect(result.matches).toBe(true);
+      expect(result.version).toBe('1.0.0');
+      expect(result.packageVersion).toBe('1.0.0');
+      expect(result.tag).toBe('v1.0.0');
     });
 
-    it('passes for a component-prefixed tag', () => {
+    it('returns matches:true for a component-prefixed tag', () => {
       writeDistPackage('2.3.1');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'i18n-keygen-v2.3.1' })).not.toThrow();
+      expect(verifyTag({ distDir: tmpDir, tag: 'i18n-keygen-v2.3.1' }).matches).toBe(true);
     });
 
-    it('passes for a deeply prefixed tag', () => {
+    it('returns matches:true for a deeply prefixed tag', () => {
       writeDistPackage('0.1.0');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'some-scope-v0.1.0' })).not.toThrow();
+      expect(verifyTag({ distDir: tmpDir, tag: 'some-scope-v0.1.0' }).matches).toBe(true);
     });
 
-    it('passes for a prerelease version', () => {
+    it('returns matches:true for a prerelease version', () => {
       writeDistPackage('1.0.0-beta.1');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'v1.0.0-beta.1' })).not.toThrow();
+      expect(verifyTag({ distDir: tmpDir, tag: 'v1.0.0-beta.1' }).matches).toBe(true);
     });
 
-    it('passes for a prerelease tag containing v in suffix', () => {
+    it('returns matches:true for a prerelease tag containing v in suffix', () => {
       writeDistPackage('1.0.0-preview.1');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'v1.0.0-preview.1' })).not.toThrow();
+      expect(verifyTag({ distDir: tmpDir, tag: 'v1.0.0-preview.1' }).matches).toBe(true);
     });
 
-    it('passes for a component-prefixed prerelease tag with v', () => {
+    it('returns matches:true for a component-prefixed prerelease tag with v', () => {
       writeDistPackage('2.0.0-dev.3');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'my-service-v2.0.0-dev.3' })).not.toThrow();
+      expect(verifyTag({ distDir: tmpDir, tag: 'my-service-v2.0.0-dev.3' }).matches).toBe(true);
     });
   });
 
   describe('mismatching versions', () => {
-    it('throws when tag version differs from package version', () => {
+    it('returns matches:false when tag version differs from package version', () => {
       writeDistPackage('1.0.0');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'v2.0.0' })).toThrow(
-        'Tag version "2.0.0" (from "v2.0.0") does not match package.json version "1.0.0"',
-      );
+      const result = verifyTag({ distDir: tmpDir, tag: 'v2.0.0' });
+      expect(result.matches).toBe(false);
+      expect(result.version).toBe('2.0.0');
+      expect(result.packageVersion).toBe('1.0.0');
     });
 
-    it('throws with component-prefixed tag on mismatch', () => {
+    it('returns matches:false with component-prefixed tag on mismatch', () => {
       writeDistPackage('1.0.0');
 
-      expect(() => verifyTag({ distDir: tmpDir, tag: 'my-lib-v3.0.0' })).toThrow(
-        'does not match package.json version "1.0.0"',
-      );
+      const result = verifyTag({ distDir: tmpDir, tag: 'my-lib-v3.0.0' });
+      expect(result.matches).toBe(false);
+      expect(result.version).toBe('3.0.0');
     });
   });
 

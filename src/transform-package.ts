@@ -1,7 +1,9 @@
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { TransformPackageReport } from './interfaces/cli.interface';
 import type { PrepareDistContext } from './types';
-import { stripDistPrefix } from './strip-dist-prefix';
+import { stripDistPrefixWithCount } from './strip-dist-prefix';
 
 interface PackageJson {
   scripts?: Record<string, string>;
@@ -10,14 +12,38 @@ interface PackageJson {
   [key: string]: unknown;
 }
 
-export function transformPackage({ packageDir, distDir, distName }: PrepareDistContext): void {
+const REMOVABLE_FIELDS = ['scripts', 'devDependencies', 'files'] as const;
+
+export function transformPackage({
+  packageDir,
+  distDir,
+  distName,
+}: PrepareDistContext): TransformPackageReport {
   const raw = readFileSync(resolve(packageDir, 'package.json'), 'utf-8');
-  const stripped = stripDistPrefix(raw, distName);
+  const sourcePackageJsonHash = sha256(raw);
+  const { text: stripped, replacedCount } = stripDistPrefixWithCount(raw, distName);
   const pkg: PackageJson = JSON.parse(stripped);
 
-  delete pkg.scripts;
-  delete pkg.devDependencies;
-  delete pkg.files;
+  const strippedFields: Array<string> = [];
+  for (const field of REMOVABLE_FIELDS) {
+    if (field in pkg) {
+      strippedFields.push(field);
+      delete pkg[field];
+    }
+  }
 
-  writeFileSync(resolve(distDir, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
+  const output = JSON.stringify(pkg, null, 2) + '\n';
+  writeFileSync(resolve(distDir, 'package.json'), output);
+
+  return {
+    strippedFields,
+    distPrefixStripped: replacedCount,
+    sourcePackageJsonHash,
+    outputPackageJsonHash: sha256(output),
+    outputSizeBytes: Buffer.byteLength(output, 'utf-8'),
+  };
+}
+
+function sha256(content: string): string {
+  return createHash('sha256').update(content).digest('hex');
 }

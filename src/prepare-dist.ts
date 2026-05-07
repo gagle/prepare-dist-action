@@ -1,5 +1,7 @@
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { PrepareDistReport } from './interfaces/cli.interface';
 import type { PrepareDistPlugin } from './types';
 import { transformPackage } from './transform-package';
 import { copyMetadata } from './copy-metadata';
@@ -17,7 +19,12 @@ export interface PrepareDistOptions {
   readonly plugins?: ReadonlyArray<PrepareDistPlugin>;
 }
 
-export function prepareDist({ path = '.', dist = 'dist', plugins = [] }: PrepareDistOptions = {}): void {
+export function prepareDist({
+  path = '.',
+  dist = 'dist',
+  plugins = [],
+}: PrepareDistOptions = {}): PrepareDistReport {
+  const start = Date.now();
   const packageDir = resolve(path);
   const distDir = resolve(packageDir, dist);
 
@@ -25,14 +32,40 @@ export function prepareDist({ path = '.', dist = 'dist', plugins = [] }: Prepare
     throw new Error(`Dist directory does not exist: ${distDir}`);
   }
 
-  if (!existsSync(resolve(packageDir, 'package.json'))) {
+  const sourcePackageJson = resolve(packageDir, 'package.json');
+  if (!existsSync(sourcePackageJson)) {
     throw new Error(`No package.json found in: ${packageDir}`);
   }
 
-  transformPackage({ packageDir, distDir, distName: dist });
-  copyMetadata(process.cwd(), distDir);
+  const sourcePackageJsonRaw = readFileSync(sourcePackageJson, 'utf-8');
+  const sourcePackageJsonHash = createHash('sha256')
+    .update(sourcePackageJsonRaw)
+    .digest('hex');
 
+  const transformResult = transformPackage({ packageDir, distDir, distName: dist });
+  const metadataCopied = copyMetadata(process.cwd(), distDir);
+
+  const pluginsApplied: Array<string> = [];
   for (const plugin of [...BUILT_IN_PLUGINS, ...plugins]) {
     plugin.execute({ packageDir, distDir, distName: dist });
+    pluginsApplied.push(plugin.name);
   }
+
+  return {
+    schemaVersion: 1,
+    source: { path: packageDir, packageJsonHash: sourcePackageJsonHash },
+    output: {
+      distPath: distDir,
+      packageJsonHash: transformResult.outputPackageJsonHash,
+      sizeBytes: transformResult.outputSizeBytes,
+    },
+    transforms: {
+      strippedFields: transformResult.strippedFields,
+      distPrefixStripped: transformResult.distPrefixStripped,
+      metadataCopied,
+      pluginsApplied,
+    },
+    versionVerification: null,
+    durationMs: Date.now() - start,
+  };
 }
